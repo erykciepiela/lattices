@@ -1,8 +1,12 @@
-{-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleInstances  #-}
-{-# LANGUAGE Safe               #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE DeriveDataTypeable     #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE Safe                   #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE TupleSections          #-}
+
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Algebra.Lattice
@@ -37,6 +41,9 @@ module Algebra.Lattice (
     -- * Fixed points of chains in lattices
     lfp, lfpFrom, unsafeLfp,
     gfp, gfpFrom, unsafeGfp,
+
+    -- * Join/meet-reducible lattices
+    JoinReducibleLattice(..), MeetReducibleLattice(..), ReducibleLattice
   ) where
 
 import Prelude ()
@@ -528,3 +535,72 @@ gfp = gfpFrom top
 {-# INLINE gfpFrom #-}
 gfpFrom :: (Eq a, BoundedMeetSemiLattice a) => a -> (a -> a) -> a
 gfpFrom init_x f = PO.unsafeGfpFrom init_x (\x -> f x /\ x)
+
+-- | Join-reducible lattice
+-- | Law:
+-- | joinReduce . joinIrreducibleElement = HS.singleton
+class (Lattice l, Hashable r) => JoinReducibleLattice l r | l -> r where
+    {-# MINIMAL joinReduce, joinIrreducibleElement #-}
+    -- | Reduce @l@ to a set of join-irreducible elements
+    joinReduce :: l -> HS.HashSet r
+    joinIrreducibleElement :: r -> l
+
+-- | Meet-irreducible lattice
+-- | Law:
+-- | meetReduce . meetIrreducibleElement = HS.singleton
+-- | not needed: meets . HS.map meetIrreducibleElement . meetReduce = id
+class (Lattice l, Hashable r) => MeetReducibleLattice l r | l -> r where
+    {-# MINIMAL meetReduce, meetIrreducibleElement #-}
+    -- | Reduce @l@ to a set of meet-irreducible elements
+    meetReduce :: l -> HS.HashSet r
+    meetIrreducibleElement :: r -> l
+
+class (JoinReducibleLattice l j, MeetReducibleLattice l m) => ReducibleLattice l j m
+
+instance (Eq a, Hashable a) => JoinReducibleLattice (HS.HashSet a) a where
+  joinReduce = id
+  joinIrreducibleElement = HS.singleton
+
+instance (Ord a, Hashable a) => JoinReducibleLattice (Set.Set a) a where
+  joinReduce = HS.fromList . Set.toList
+  joinIrreducibleElement = Set.singleton
+
+instance JoinReducibleLattice IS.IntSet Int where
+  joinReduce = HS.fromList . IS.toList
+  joinIrreducibleElement = IS.singleton
+
+instance JoinReducibleLattice Bool () where
+  joinReduce True = HS.singleton ()
+  joinReduce False = HS.empty
+  joinIrreducibleElement _ = True
+
+instance JoinReducibleLattice All () where
+  joinReduce (All True) = HS.singleton ()
+  joinReduce (All False) = HS.empty
+  joinIrreducibleElement _ = All True
+
+instance JoinReducibleLattice Any () where
+  joinReduce (Any True) = HS.singleton ()
+  joinReduce (Any False) = HS.empty
+  joinIrreducibleElement _ = Any True
+
+instance JoinReducibleLattice () Void where
+  joinReduce _ = HS.empty
+  joinIrreducibleElement _ = ()
+
+instance JoinReducibleLattice l r => JoinReducibleLattice (Identity l) r where
+  joinReduce = joinReduce . runIdentity
+  joinIrreducibleElement = Identity . joinIrreducibleElement
+
+instance (Ord k, Hashable k, JoinReducibleLattice v r, Eq r) => JoinReducibleLattice (Map.Map k v) (k, r) where
+  joinReduce = Map.foldrWithKey (\k l -> HS.union (HS.map (k,) (joinReduce l))) HS.empty
+  joinIrreducibleElement (k, r)= Map.singleton k (joinIrreducibleElement r)
+
+instance (JoinReducibleLattice v r, Eq r) => JoinReducibleLattice (IM.IntMap v) (Int, r) where
+  joinReduce = IM.foldrWithKey (\k l -> HS.union (HS.map (k,) (joinReduce l))) HS.empty
+  joinIrreducibleElement (k, r) = IM.singleton k (joinIrreducibleElement r)
+
+instance (JoinReducibleLattice l r, JoinReducibleLattice l' r') => JoinReducibleLattice (l, l') (Either r r') where
+  -- joinReduce = IM.foldrWithKey (\k l -> HS.union (HS.map (k,) (joinReduce l))) HS.empty
+  joinIrreducibleElement (Right r') = (bottom, joinIrreducibleElement r')
+  joinIrreducibleElement (Left r) = (joinIrreducibleElement r, bottom)

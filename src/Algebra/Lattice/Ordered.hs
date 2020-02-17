@@ -1,12 +1,15 @@
-{-# LANGUAGE DeriveDataTypeable  #-}
-{-# LANGUAGE DeriveFoldable      #-}
-{-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE DeriveTraversable   #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE Safe                #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE Safe                  #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Algebra.Lattice.Ordered
@@ -35,6 +38,7 @@ import Data.Universe.Class   (Finite (..), Universe (..))
 import Data.Universe.Helpers (Natural, Tagged, retag)
 import GHC.Generics          (Generic, Generic1)
 
+import qualified Data.HashSet    as HS
 import qualified Test.QuickCheck as QC
 
 --
@@ -88,6 +92,10 @@ instance Universe a => Universe (Ordered a) where
 instance Finite a => Finite (Ordered a) where
     universeF = map Ordered universeF
     cardinality = retag (cardinality :: Tagged a Natural)
+
+instance (Ord a, Hashable a) => JoinReducibleLattice (Ordered a) a where
+    joinReduce = HS.singleton . getOrdered
+    joinIrreducibleElement = Ordered
 
 instance QC.Arbitrary a => QC.Arbitrary (Ordered a) where
     arbitrary = Ordered <$> QC.arbitrary

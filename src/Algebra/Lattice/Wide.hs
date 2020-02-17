@@ -1,11 +1,14 @@
-{-# LANGUAGE DeriveDataTypeable  #-}
-{-# LANGUAGE DeriveFoldable      #-}
-{-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE DeriveTraversable   #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE Safe                #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE Safe                  #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Algebra.Lattice.Wide
@@ -33,6 +36,7 @@ import Data.Universe.Class   (Finite (..), Universe (..))
 import Data.Universe.Helpers (Natural, Tagged, retag)
 import GHC.Generics          (Generic, Generic1)
 
+import qualified Data.HashSet    as HS
 import qualified Test.QuickCheck as QC
 
 --
@@ -110,6 +114,14 @@ instance Universe a => Universe (Wide a) where
 instance Finite a => Finite (Wide a) where
     universeF = Top : Bottom : map Middle universeF
     cardinality = fmap (2 +) (retag (cardinality :: Tagged a Natural))
+
+
+instance (Eq a, Hashable a) => JoinReducibleLattice (Wide a) a where
+  joinReduce Bottom = HS.empty
+  joinReduce (Middle a) = HS.singleton a
+  joinReduce Top = undefined -- TODO
+  joinIrreducibleElement = Middle
+
 
 instance QC.Arbitrary a => QC.Arbitrary (Wide a) where
     arbitrary = QC.frequency

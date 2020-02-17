@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE Safe               #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE Safe                  #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Algebra.Lattice.ZeroHalfOne
@@ -23,6 +24,7 @@ import Data.Hashable       (Hashable (..))
 import Data.Universe.Class (Finite (..), Universe (..))
 import GHC.Generics        (Generic)
 
+import qualified Data.HashSet    as HS
 import qualified Test.QuickCheck as QC
 
 import Algebra.Heyting
@@ -78,3 +80,10 @@ instance NFData ZeroHalfOne where
 
 instance Hashable ZeroHalfOne where
     hashWithSalt salt = hashWithSalt salt . fromEnum
+
+instance JoinReducibleLattice ZeroHalfOne Bool where
+  joinReduce Zero = HS.empty
+  joinReduce Half = HS.singleton False
+  joinReduce One = HS.singleton True
+  joinIrreducibleElement False = Half
+  joinIrreducibleElement True = One
