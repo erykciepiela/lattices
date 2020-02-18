@@ -116,10 +116,7 @@ instance Finite a => Finite (Wide a) where
     cardinality = fmap (2 +) (retag (cardinality :: Tagged a Natural))
 
 
-instance (Eq a, Hashable a) => JoinReducibleLattice (Wide a) a where
-  joinReduce Bottom = HS.empty
-  joinReduce (Middle a) = HS.singleton a
-  joinReduce Top = undefined -- TODO
+instance Eq a => JoinReducibleLattice (Wide a) a where
   joinIrreducibleElement = Middle
 
 

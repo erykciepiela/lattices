@@ -82,8 +82,5 @@ instance Hashable ZeroHalfOne where
     hashWithSalt salt = hashWithSalt salt . fromEnum
 
 instance JoinReducibleLattice ZeroHalfOne Bool where
-  joinReduce Zero = HS.empty
-  joinReduce Half = HS.singleton False
-  joinReduce One = HS.singleton True
   joinIrreducibleElement False = Half
   joinIrreducibleElement True = One

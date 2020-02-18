@@ -93,8 +93,7 @@ instance Finite a => Finite (Ordered a) where
     universeF = map Ordered universeF
     cardinality = retag (cardinality :: Tagged a Natural)
 
-instance (Ord a, Hashable a) => JoinReducibleLattice (Ordered a) a where
-    joinReduce = HS.singleton . getOrdered
+instance (Ord a, Bounded a) => JoinReducibleLattice (Ordered a) a where
     joinIrreducibleElement = Ordered
 
 instance QC.Arbitrary a => QC.Arbitrary (Ordered a) where
