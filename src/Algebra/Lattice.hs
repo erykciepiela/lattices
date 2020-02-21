@@ -538,7 +538,7 @@ gfpFrom init_x f = PO.unsafeGfpFrom init_x (\x -> f x /\ x)
 
 -- | Join-reducible lattice
 -- | Law:
--- | `(joins . map joinIrreducibleElement)` is a homomorphisms i.e.
+-- | `(joins . map joinIrreducibleElement)` is a homomorphisms from `Set r` to `l` i.e.
 -- | `(joins . map joinIrreducibleElement) (union a b) = (joins . map joinIrreducibleElement) a \/ (joins . map joinIrreducibleElement) b`
 -- | in particular when `a = b = 0` (a and b are empty sets) then `(joins . map joinIrreducibleElement) 0 = 0` (lattice bottom element)
 class (BoundedJoinSemiLattice l) => JoinReducibleLattice l r | l -> r where
